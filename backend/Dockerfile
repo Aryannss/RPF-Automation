@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY app/requirements.txt /app/requirements.txt
+
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir fastapi uvicorn[standard] python-multipart pydantic numpy pandas python-dotenv pdfminer.six reportlab aiofiles
+RUN pip install --no-cache-dir sentence-transformers==2.2.2 --no-deps
 
 COPY app /app/app
 

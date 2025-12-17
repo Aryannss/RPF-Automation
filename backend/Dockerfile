@@ -11,8 +11,7 @@ WORKDIR /app
 COPY app/requirements.txt /app/requirements.txt
 
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir fastapi uvicorn[standard] python-multipart pydantic numpy pandas python-dotenv pdfminer.six reportlab aiofiles
-RUN pip install --no-cache-dir sentence-transformers==2.2.2 --no-deps
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY app /app/app
 

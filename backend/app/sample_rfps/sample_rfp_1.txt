@@ -1,0 +1,9 @@
+Sample RFP: Office Renovation - Paint Requirements
+Client: Acme Corp
+Require: Exterior and interior painting of 10,000 sq ft office area.
+Specifications:
+- Exterior paint: high-durability, weather-resistant emulsion suitable for coastal environment.
+- Interior paint: low VOC, washable finish for conference rooms and corridors.
+- Quantity: approx 200 liters exterior, 100 liters interior.
+- Primer: anti-rust primer for metal fixtures.
+Delivery timeline: 6 weeks from PO.

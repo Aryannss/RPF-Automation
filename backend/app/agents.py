@@ -1,7 +1,8 @@
 from typing import List, Dict
 import pandas as pd
 import numpy as np
-from sentence_transformers import SentenceTransformer, util
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -17,24 +18,28 @@ class SalesAgent:
 class TechnicalAgent:
     def __init__(self, sku_db_path: str):
         self.sku_db = pd.read_csv(sku_db_path)
-        self.model = SentenceTransformer(MODEL_NAME)
-        # precompute SKU embeddings
-        self.sku_texts = (self.sku_db["sku_name"].fillna("") + " " + self.sku_db["description"].fillna("")).tolist()
-        self.sku_embeddings = self.model.encode(self.sku_texts, convert_to_tensor=True)
+        self.vectorizer = TfidfVectorizer(
+            stop_words="english",
+            ngram_range=(1, 2)
+        )
 
-    def extract_requirements(self, rfp_text: str) -> List[str]:
-        # Very simple extractor: split lines and keep lines with keywords
+        self.sku_texts = (
+            self.sku_db["sku_name"].fillna("") + " " +
+            self.sku_db["description"].fillna("")
+        ).tolist()
+
+        # Fit once on SKU data
+        self.sku_vectors = self.vectorizer.fit_transform(self.sku_texts)
+
+    def extract_requirements(self, rfp_text: str):
         lines = [l.strip() for l in rfp_text.splitlines() if l.strip()]
-        reqs = []
-        keywords = ["require", "spec", "specification", "quantity", "qty", "material", "finish", "dimension"]
-        for l in lines:
-            low = l.lower()
-            if any(k in low for k in keywords) or len(l) < 200 and ":" in l:
-                reqs.append(l)
-        # fallback: take the top 6 lines
-        if len(reqs) == 0:
+        keywords = ["require", "spec", "specification", "quantity", "qty", "material", "finish"]
+        reqs = [l for l in lines if any(k in l.lower() for k in keywords)]
+
+        if not reqs:
             reqs = lines[:6]
-        # deduplicate
+
+        # Deduplicate
         seen = set()
         unique = []
         for r in reqs:
@@ -43,23 +48,24 @@ class TechnicalAgent:
                 unique.append(r)
         return unique
 
-    def match_skus(self, requirements: List[str], top_k: int = 3) -> Dict[int, List[Dict]]:
-        req_embeddings = self.model.encode(requirements, convert_to_tensor=True)
+    def match_skus(self, requirements, top_k=3):
+        req_vectors = self.vectorizer.transform(requirements)
+        similarity_matrix = cosine_similarity(req_vectors, self.sku_vectors)
+
         results = {}
-        for i, emb in enumerate(req_embeddings):
-            scores = util.cos_sim(emb, self.sku_embeddings)[0].cpu().numpy()
-            idxs = np.argsort(scores)[::-1][:top_k]
+        for i, row in enumerate(similarity_matrix):
+            top_indices = row.argsort()[::-1][:top_k]
             hits = []
-            for idx in idxs:
+            for idx in top_indices:
                 hits.append({
                     "sku_id": str(self.sku_db.iloc[idx]["sku_id"]),
                     "sku_name": str(self.sku_db.iloc[idx]["sku_name"]),
-                    "score": float(scores[idx]),
+                    "score": float(row[idx]),
                     "unit_price": float(self.sku_db.iloc[idx].get("unit_price", 0) or 0)
                 })
             results[i] = hits
         return results
-
+        
 class PricingAgent:
     def estimate_pricing(self, sku_hits: Dict[int, List[Dict]]) -> List[Dict]:
         pricing = []

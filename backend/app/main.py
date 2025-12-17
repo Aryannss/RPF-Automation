@@ -6,8 +6,16 @@ from app.schemas import RFPUploadResponse, RFPResult
 import os
 import shutil
 import uuid
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="RFP Agent Prototype")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow Vercel frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 BASE_DIR = os.path.dirname(__file__)
 SKU_DB = os.path.join(BASE_DIR, "sku_db.csv")

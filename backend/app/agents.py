@@ -6,6 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 MODEL_NAME = "all-MiniLM-L6-v2"  # change if desired
 

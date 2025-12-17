@@ -1,6 +1,8 @@
-FROM python:3.10-slim
+FROM python:3.10
 
-# Install system dependencies required by numpy, sklearn, reportlab
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     gfortran \
@@ -10,8 +12,6 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 
 # Copy requirements
 COPY app/requirements.txt /app/requirements.txt
@@ -27,5 +27,4 @@ COPY app /app/app
 
 ENV PYTHONPATH=/app
 
-# Render injects PORT automatically
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
